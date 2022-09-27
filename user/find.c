@@ -73,7 +73,7 @@ void find(char *path, char *name)
         break;
     }
     close(fd);
-}
+} 
 
 int main(int argc, char *argv[])
 {

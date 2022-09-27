@@ -25,13 +25,7 @@ int main(int argc, char* argv[]){
         // printf("%c\n", ch);
         if (ch == '\n')
         {
-            // int i = 0;
-            // while (argv_[i] != 0)
-            // {
-            //     printf("sub:%s\n", argv_[i]);
-            //     i++;
-            // }
-            // printf("\n");
+
             command[p_c++] = '\0';
             argv_[p_a++] = 0;
             if (fork()==0)
@@ -55,15 +49,7 @@ int main(int argc, char* argv[]){
         {
             command[p_c++] = ch;
         }
-        // int i = 0;
-        // while (argv_[i] != 0)
-        // {
-        //     printf("out:%s\n", argv_[i]);
-        //     i++;
-        // }
-            // printf("\n");
-        
-        // printf("%s", argv[1]);
+
     }
     exit(0);
 }

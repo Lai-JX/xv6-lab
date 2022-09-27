@@ -8,7 +8,7 @@ void sub_fork(int p_read){
         pipe(current_fd);
         printf("prime %d\n", prime);
         if (fork()==0){
-            close(current_fd[1]);
+            close(current_fd[1]);       //子进程在读之前要关闭通道 
             sub_fork(current_fd[0]);
         }
         else
@@ -19,7 +19,7 @@ void sub_fork(int p_read){
                     write(current_fd[1], &temp, 4);
                 }
             }
-            close(current_fd[1]);
+            close(current_fd[1]);       //父进程在写完要关闭通道 
             wait(0);
         }
     }
