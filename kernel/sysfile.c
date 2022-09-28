@@ -18,6 +18,9 @@
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
+
+//获取第n个字大小的系统调用参数作为文件描述符
+//并返回描述符和相应的结构文件。
 static int
 argfd(int n, int *pfd, struct file **pf)
 {

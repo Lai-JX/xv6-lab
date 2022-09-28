@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -61,7 +62,7 @@ sys_sleep(void)
   if(argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
-  ticks0 = ticks;
+  ticks0 = ticks; 
   while(ticks - ticks0 < n){
     if(myproc()->killed){
       release(&tickslock);
@@ -94,4 +95,35 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64
+sys_trace(void)
+{
+  int mask;
+  if (argint(0,&mask)<0)    // 读取寄存器a0的值
+  {
+    return -1;
+  }
+  myproc()->mask = mask;    // 这里的mask对应trace传入的第一个参数，按照实例，应该是标志位向量对应的十进制数
+  return 0;
+}
+
+uint64
+sys_sysinfo(void)
+{
+  struct sysinfo info;
+  struct proc *p = myproc();
+  uint64 addr_out;
+  if (argint(0, &addr_out)<0)// 读取参数，即结构体指针
+  { 
+    return - 1;
+  }
+
+
+  // 通过p->pagetable,将info写到addr_out，第四个参数为长度
+  if(copyout(p->pagetable, addr_out, (char*) &info, sizeof(info))<0){
+    return -1;
+  }
+  return 0;
 }

@@ -261,7 +261,7 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
-
+  
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
@@ -294,6 +294,7 @@ fork(void)
   pid = np->pid;
 
   np->state = RUNNABLE;
+  np->mask = p->mask;
 
   release(&np->lock);
 
