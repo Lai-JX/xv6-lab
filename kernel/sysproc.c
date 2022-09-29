@@ -8,6 +8,7 @@
 #include "proc.h"
 #include "sysinfo.h"
 
+
 uint64
 sys_exit(void)
 {
@@ -115,15 +116,18 @@ sys_sysinfo(void)
   struct sysinfo info;
   struct proc *p = myproc();
   uint64 addr_out;
-  if (argint(0, &addr_out)<0)// 读取参数，即结构体指针
+  if (argaddr(0, &addr_out)<0)// 读取参数，即结构体指针
   { 
     return - 1;
   }
+  info.freemem = freemem();     // 剩余内存空间
+  info.nproc = nproc();         // 空闲进程数量
+  info.freefd = freefd_count(); // 可用文件描述符数量
 
-
-  // 通过p->pagetable,将info写到addr_out，第四个参数为长度
+  // 通过p->pagetable,将info写到addr_out，第四个参数为长度   内核地址空间复制到用户空间
   if(copyout(p->pagetable, addr_out, (char*) &info, sizeof(info))<0){
     return -1;
   }
+
   return 0;
 }

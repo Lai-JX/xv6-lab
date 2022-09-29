@@ -18,6 +18,8 @@ struct spinlock pid_lock;
 extern void forkret(void);
 static void wakeup1(struct proc *chan);
 static void freeproc(struct proc *p);
+int nproc(void);
+int freefd_count(void);
 
 extern char trampoline[]; // trampoline.S
 
@@ -461,7 +463,7 @@ scheduler(void)
   struct cpu *c = mycpu();
   
   c->proc = 0;
-  for(;;){
+  for(;;){                              //  计算空闲进程数可以用这个
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
     
@@ -693,4 +695,31 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+// 返回空闲进程数量
+int nproc(void)
+{
+  struct proc *p;
+  int count=0;
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    acquire(&p->lock);
+    if (p->state == UNUSED)
+    {
+      count++;
+    }
+    release(&p->lock);
+  }
+  return count;
+}
+// 返回可用文件描述符数量
+int freefd_count(void)
+{
+  struct proc *p = myproc();
+  int count = 0;
+  for (int i = 0; i < NOFILE; i++)
+    if(!(p->ofile[i]))
+      count++;
+  return count;
 }
