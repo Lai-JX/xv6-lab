@@ -718,8 +718,8 @@ int freefd_count(void)
 {
   struct proc *p = myproc();
   int count = 0;
-  for (int i = 0; i < NOFILE; i++)
-    if(!(p->ofile[i]))
+  for (int i = 0; i < NOFILE; i++)  // 遍历所有文件描述符
+    if(!(p->ofile[i]))              // 0 表示空闲，即可用
       count++;
   return count;
 }

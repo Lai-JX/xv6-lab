@@ -116,7 +116,7 @@ sys_sysinfo(void)
   struct sysinfo info;
   struct proc *p = myproc();
   uint64 addr_out;
-  if (argaddr(0, &addr_out)<0)// 读取参数，即结构体指针
+  if (argaddr(0, &addr_out)<0)// 读取参数，即结构体指针  这里的n应该为用户程序中系统调用参数的索引
   { 
     return - 1;
   }
