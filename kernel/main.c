@@ -13,17 +13,22 @@ main()
   if(cpuid() == 0){
     consoleinit();
 #if defined(LAB_PGTBL) || defined(LAB_LOCK)
-    statsinit();
+    statsinit(); 
 #endif
     printfinit();
     printf("\n");
     printf("xv6 kernel is booting\n");
     printf("\n");
     kinit();         // physical page allocator
+
     kvminit();       // create kernel page table
+
     kvminithart();   // turn on paging
+
     procinit();      // process table
+
     trapinit();      // trap vectors
+
     trapinithart();  // install kernel trap vector
     plicinit();      // set up interrupt controller
     plicinithart();  // ask PLIC for device interrupts

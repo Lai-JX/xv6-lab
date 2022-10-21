@@ -18,16 +18,39 @@ struct run {
   struct run *next;
 };
 
-struct {
+struct kmem {
   struct spinlock lock;
   struct run *freelist;
-} kmem;
+};
+
+struct kmem kmems[NCPU];
+int init_flag = 0;  // 标注是否在初始化
+int init_cpu_id = 0;  // 正在初始化的cpu的id
 
 void
 kinit()
 {
-  initlock(&kmem.lock, "kmem");
-  freerange(end, (void*)PHYSTOP);
+  // 只有当首次启动时会被调用这个函数，故可以在这里将freelist分为每个CPU独立的freelist
+
+  char name[10] = {'k', 'm', 'e', 'm', '_', 'c', 'p', 'u', '0', '\0'};
+  // 每个cpu的空间(均分) 以PFSIZE为单位
+  uint64 cpu_kmem_size = (PHYSTOP - (uint64)end) / (NCPU*PGSIZE);
+
+  init_flag = 1;  // 标志为初始化
+  // 遍历各个CPU，设置锁并分配freelist
+  for (int i = 0; i < NCPU; i++)
+  {
+    init_cpu_id = i;
+    name[8] = i + 48; // '0'的ascii码为48
+    initlock(&kmems[i].lock, name);
+    uint64 base = (uint64)end + cpu_kmem_size * i*PGSIZE;
+
+    if (i == NCPU-1)
+      freerange((void*)base, (void*)PHYSTOP);
+    else
+      freerange((void*)base, (void*)(base + cpu_kmem_size*PGSIZE));
+  }
+  init_flag = 0;  // 初始化完毕
 }
 
 void
@@ -48,6 +71,7 @@ kfree(void *pa)
 {
   struct run *r;
 
+
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
@@ -56,10 +80,20 @@ kfree(void *pa)
 
   r = (struct run*)pa;
 
-  acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  release(&kmem.lock);
+  int cpu_id;
+  if (init_flag == 1)       // 如果是初始化，则采用要分配内存的cpu_id
+    cpu_id = init_cpu_id;
+  else
+  {
+    push_off();
+    cpu_id = cpuid();
+    pop_off();
+  }
+
+  acquire(&kmems[cpu_id].lock);
+  r->next = kmems[cpu_id].freelist;
+  kmems[cpu_id].freelist = r;
+  release(&kmems[cpu_id].lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -69,14 +103,27 @@ void *
 kalloc(void)
 {
   struct run *r;
+  push_off();
+  int cpu_id = cpuid();
+  pop_off();
 
-  acquire(&kmem.lock);
-  r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  release(&kmem.lock);
+  for (int i = 0; i < NCPU; i++)
+  {
+    int id = (cpu_id + i) % NCPU;    // 优先访问本CPU的freelist
 
+    acquire(&kmems[id].lock);
+    r = kmems[id].freelist;
+    if(r)
+    {
+      kmems[id].freelist = r->next;
+      release(&kmems[id].lock);
+      break;
+    }
+    else 
+      release(&kmems[id].lock);
+  }
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
+
   return (void*)r;
 }
