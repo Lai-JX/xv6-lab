@@ -23,15 +23,6 @@
 #include "fs.h"
 #include "buf.h"
 
-// struct {
-//   struct spinlock lock;
-//   struct buf buf[NBUF];
-
-//   // Linked list of all buffers, through prev/next.
-//   // Sorted by how recently the buffer was used.
-//   // head.next is most recent, head.prev is least.
-//   struct buf head;
-// } bcache;
 #define NBUCKETS 13
 struct {
   struct spinlock lock[NBUCKETS];
@@ -45,21 +36,9 @@ struct {
 void
 binit(void)
 {
-  // struct buf *b;
-
-  // initlock(&bcache.lock, "bcache");
-
-  // // Create linked list of buffers
-  // bcache.head.prev = &bcache.head;
-  // bcache.head.next = &bcache.head;
-  // for(b = bcache.buf; b < bcache.buf+NBUF; b++){
-  //   b->next = bcache.head.next;
-  //   b->prev = &bcache.head;
-  //   initsleeplock(&b->lock, "buffer");
-  //   bcache.head.next->prev = b;
-  //   bcache.head.next = b;
-  // }
   struct buf *b;
+
+  // 初始化锁和链表头
   for (int i = 0; i < NBUCKETS; i++)
   {
     initlock(&bcache.lock[i], "bcache");
@@ -144,7 +123,7 @@ bget(uint dev, uint blockno)
 
   if (b)
   {
-    // 采用头插法先插入当前链表
+    // 采用头插法插入当前链表
     b->next = bcache.hashbucket[id].next;
     b->prev = &bcache.hashbucket[id];
     bcache.hashbucket[id].next->prev = b;
@@ -158,33 +137,6 @@ bget(uint dev, uint blockno)
     acquiresleep(&b->lock);
     return b;
   }
-  
-  // b = bfind(id);
-  // if(!b)
-  // {
-  //   // 找不到b，意味着要到别的哈希桶找
-  //   // // 先释放当前锁，再加全局锁，防止死锁
-  //   // release(&bcache.lock[id]);
-  //   // acquire(&bcache.lock_all);
-  //   int temp_hashid = 0;
-  //   for (int i = 1; i < NBUCKETS; i++)
-  //   {
-  //     temp_hashid = (id + i) % NBUCKETS;
-
-  //     b = bfind(temp_hashid);
-  //   }
-  // }
-  // for(b = bcache.hashbucket[id].prev; b != &bcache.hashbucket[id]; b = b->prev){
-  //   if(b->refcnt == 0) {
-  //     b->dev = dev;
-  //     b->blockno = blockno;
-  //     b->valid = 0;
-  //     b->refcnt = 1;
-  //     release(&bcache.lock);
-  //     acquiresleep(&b->lock);
-  //     return b;
-  //   }
-  // }
   panic("bget: no buffers");
 }
 
