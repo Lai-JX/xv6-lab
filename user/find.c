@@ -6,7 +6,7 @@
 char* fmtname(char *path) // 返回文件名
 {
     char *p;
-    // Find first character after last slash.（斜线）
+    // Find first character after last slash.（斜线）；找到最后一个斜线即可找到文件名
     for(p=path+strlen(path); p >= path && *p != '/'; p--)
         ;
     p++;
@@ -34,7 +34,7 @@ void find(char *path, char *name)
     switch (st.type)  // 1表示文件夹，2表示文件
     {
     case T_FILE:
-        if(strcmp(name, fmtname(path))==0){
+        if(strcmp(name, fmtname(path))==0){     // 比对文件名，查看是否为要找的文件
             printf("%s\n", path);
         }
         break;

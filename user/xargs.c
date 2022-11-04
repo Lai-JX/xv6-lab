@@ -3,7 +3,6 @@
 #include "user/user.h"
 
 int main(int argc, char* argv[]){
-    // printf("ii");
     char command[256], *argv_[MAXARG];
     int p_c=0, p_a=0;
     // 读取要执行的命令, 保留除第一个参数外的所有参数的字母到command，参数指针保留到argv_
@@ -22,15 +21,14 @@ int main(int argc, char* argv[]){
     char ch;
     while (read(0, &ch, 1)>0)       // 读取字符，每次读取一个
     {
-        // printf("%c\n", ch);
+
         if (ch == '\n')
         {
-
             command[p_c++] = '\0';
             argv_[p_a++] = 0;
             if (fork()==0)
             {
-                exec(argv[1], argv_);
+                exec(argv[1], argv_);       // 以xargs echo good 为例，这里echo就是argv[1]
             }
             else        // 在父进程中，将参数回退到原本的状态
             {
@@ -40,7 +38,7 @@ int main(int argc, char* argv[]){
                 
             }
         }
-        else if (ch == ' ')
+        else if (ch == ' ')     // 读到空格，参数个数增加
         {
             command[p_c++] = '\0';
             argv_[p_a++] = command + p_c;
