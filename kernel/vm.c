@@ -194,7 +194,7 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     *pte = 0;
   }
 }
-
+ 
 // create an empty user page table.
 // returns 0 if out of memory.
 pagetable_t
@@ -450,3 +450,44 @@ test_pagetable()
   uint64 gsatp = MAKE_SATP(kernel_pagetable);
   return satp != gsatp;
 }
+
+// lab4 （1）打印页表信息
+void
+vmprint(pagetable_t pagetable)
+{
+  printf("page table %p\n", pagetable);
+  // there are 2^9 = 512 PTEs in a page table.
+  // 遍历根页表的项
+  for(int i = 0; i < 512; i++){
+    pte_t pte_L2 = pagetable[i];
+    if (pte_L2 & PTE_V)   // 是否有效
+    {
+      printf("||%d: pte %p pa %p\n", i, pte_L2, PTE2PA(pte_L2));
+
+      // 二级目录基地址
+      pagetable_t pte_L1_base = (pagetable_t)(PTE2PA(pte_L2));
+      printf("base-2:%p", pte_L1_base);
+      // 遍历第二级目录项
+      for (int j = 0; j < 512; j++)
+      {
+        pte_t pte_L1 = pte_L1_base[j];
+        if (pte_L1 & PTE_V)   // 是否有效
+        {
+          printf("|| ||%d: pte %p pa %p\n", j, pte_L1, PTE2PA(pte_L1));
+
+          // 第三级目录基地址
+          pagetable_t pte_L0_base =  (pagetable_t)(PTE2PA(pte_L1));  
+          // 遍历第三级目录项
+          for (int k = 0; k < 512; k++)
+          {
+            pte_t pte_L0 = pte_L0_base[j];
+            if (pte_L0 & PTE_V)
+              printf("|| || ||%d: pte %p pa %p\n", k, pte_L0, PTE2PA(pte_L0));
+            
+          }
+        }
+      }
+    }
+  }
+}
+
