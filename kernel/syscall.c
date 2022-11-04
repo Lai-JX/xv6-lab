@@ -140,7 +140,7 @@ void
 syscall(void)
 {
   int num;
-  struct proc *p = myproc();
+  struct proc *p = myproc();        // 进程控制块
 
   num = p->trapframe->a7;           // 这里的num是系统调用的编号
   
@@ -148,7 +148,7 @@ syscall(void)
   {
     unsigned int a0 = p->trapframe->a0;      // 系统调用的第一个参数
     p->trapframe->a0 = syscalls[num]();       // 系统调用返回值
-    if (p->mask & 1 << num)
+    if (p->mask & 1 << num)                   // 根据系统调用编号，判断是否需要trace
     {
 
       printf("%d: %s(%d) -> %d\n", p->pid, syscalls_names[num-1], a0, p->trapframe->a0);
