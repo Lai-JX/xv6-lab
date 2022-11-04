@@ -81,7 +81,7 @@ kfree(void *pa)
   int cpu_id;
   if (init_flag == 1)       // 如果是初始化，则采用要分配内存的cpu_id
     cpu_id = init_cpu_id;
-  else
+  else                      // 回收到当前CPU对应的空闲页链表
   {
     push_off();
     cpu_id = cpuid();
@@ -89,7 +89,7 @@ kfree(void *pa)
   }
 
   acquire(&kmems[cpu_id].lock);
-  r->next = kmems[cpu_id].freelist;
+  r->next = kmems[cpu_id].freelist;   // 采用头插法插入空闲页链表
   kmems[cpu_id].freelist = r;
   release(&kmems[cpu_id].lock);
 }
@@ -113,7 +113,7 @@ kalloc(void)
     r = kmems[id].freelist;
     if(r)
     {
-      kmems[id].freelist = r->next;
+      kmems[id].freelist = r->next; // 取出表头元素
       release(&kmems[id].lock);
       break;
     }
