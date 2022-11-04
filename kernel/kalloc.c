@@ -32,7 +32,6 @@ kinit()
 {
   // 只有当首次启动时会被调用这个函数，故可以在这里将freelist分为每个CPU独立的freelist
 
-  char name[10] = {'k', 'm', 'e', 'm', '_', 'c', 'p', 'u', '0', '\0'};
   // 每个cpu的空间(均分) 以PFSIZE为单位
   uint64 cpu_kmem_size = (PHYSTOP - (uint64)end) / (NCPU*PGSIZE);
 
@@ -41,8 +40,7 @@ kinit()
   for (int i = 0; i < NCPU; i++)
   {
     init_cpu_id = i;
-    name[8] = i + 48; // '0'的ascii码为48
-    initlock(&kmems[i].lock, name);
+    initlock(&kmems[i].lock, "kmem");
     uint64 base = (uint64)end + cpu_kmem_size * i*PGSIZE;
 
     if (i == NCPU-1)

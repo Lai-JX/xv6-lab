@@ -110,7 +110,7 @@ bget(uint dev, uint blockno)
 
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.(先在当前哈希桶内获取,若差不到就找下一哈希桶...)
-  b = bfind(id,0);    // 查找当前队列
+  b = bfind(id,0);    // 查找当前链表
   int temp_hashid = id;
   if (!b) 
     for (int i = 1; i < NBUCKETS; i++)
