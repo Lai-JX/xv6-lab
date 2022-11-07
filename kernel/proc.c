@@ -39,7 +39,8 @@ procinit(void)
         panic("kalloc");
       uint64 va = KSTACK((int) (p - proc));
       kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
-      p->kstack = va;
+      p->kstack = va;   // 内核栈虚拟地址
+      p->kstack_pa = (uint64)pa;   // 内核栈物理地址
   }
   kvminithart();
 }
@@ -85,6 +86,8 @@ allocpid() {
   return pid;
 }
 
+
+
 // Look in the process table for an UNUSED proc.
 // If found, initialize state required to run in the kernel,
 // and return with p->lock held.
@@ -121,6 +124,18 @@ found:
     return 0;
   }
 
+  // An empty kernel page table.  （为进程创建独立内核页表）
+  p->k_pagetable = pvminit();
+  if (p->k_pagetable == 0)
+  {
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+
+  // 为已建立的独立内核页表，构建内核栈的虚拟地址和物理地址的映射
+  pvmmap(p->k_pagetable, p->kstack, p->kstack_pa, PGSIZE, PTE_R | PTE_W);
+
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
@@ -129,6 +144,7 @@ found:
 
   return p;
 }
+
 
 // free a proc structure and the data hanging from it,
 // including user pages.
@@ -141,6 +157,12 @@ freeproc(struct proc *p)
   p->trapframe = 0;
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
+
+  // 释放独立内核页表
+  if (p->k_pagetable)
+    freewalk_punmap(p->k_pagetable);
+  p->k_pagetable = 0; 
+
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -229,7 +251,8 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
-
+  // 独立内核页表
+  pvmcopy(p->pagetable, p->k_pagetable, 0, p->sz);
   release(&p->lock);
 }
 
@@ -246,8 +269,16 @@ growproc(int n)
     if((sz = uvmalloc(p->pagetable, sz, sz + n)) == 0) {
       return -1;
     }
-  } else if(n < 0){
+    if (pvmcopy(p->pagetable, p->k_pagetable, p->sz, sz) < 0)  // uvmalloc返回的已经是新的size
+      return -1;
+  }
+  else if (n < 0)
+  {
     sz = uvmdealloc(p->pagetable, sz, sz + n);
+    // printf("growproc-\n");
+    // 内核页表同步改变
+    if (pvmclear(p->k_pagetable, p->sz, sz) < 0)     // uvmalloc返回的已经是新的size
+      return -1;
   }
   p->sz = sz;
   return 0;
@@ -269,6 +300,13 @@ fork(void)
 
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
+  // printf("fork\n");
+  // Copy kernel memory from parent to child. 复制独立内核页表
+  if(pvmcopy(np->pagetable, np->k_pagetable, 0, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
     return -1;
@@ -473,8 +511,12 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
-        swtch(&c->context, &p->context);
-
+        // 运行进程，则将独立内核页表放入寄存器satp
+        pvminithart(p->k_pagetable);
+        // 上下文切换，从当前调度器的上下文切换到要执行进程的上下文
+        swtch(&c->context, &p->context);    
+        kvminithart();    // 此语句能执行，说明进程已经执行完毕，
+                          // 应该将satp载入全局的内核页表，因为调度器运行在全局页表
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0; // cpu dosen't run any process now

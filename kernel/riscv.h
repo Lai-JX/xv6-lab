@@ -45,6 +45,7 @@ w_mepc(uint64 x)
 #define SSTATUS_UPIE (1L << 4) // User Previous Interrupt Enable
 #define SSTATUS_SIE (1L << 1)  // Supervisor Interrupt Enable
 #define SSTATUS_UIE (1L << 0)  // User Interrupt Enable
+#define SSTATUS_SUM (1L << 18) // Allow kernel to visit user's vitual address
 
 static inline uint64
 r_sstatus()
@@ -333,7 +334,7 @@ sfence_vma()
 #define PTE_U (1L << 4) // 1 -> user can access
 
 // shift a physical address to the right place for a PTE.
-#define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
+#define PA2PTE(pa) ((((uint64)pa) >> 12) << 10) // 页表项PTE的低10位为一些标志位
 
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 
@@ -342,7 +343,7 @@ sfence_vma()
 // extract the three 9-bit page table indices from a virtual address.
 #define PXMASK          0x1FF // 9 bits
 #define PXSHIFT(level)  (PGSHIFT+(9*(level)))
-#define PX(level, va) ((((uint64) (va)) >> PXSHIFT(level)) & PXMASK)
+#define PX(level, va) ((((uint64) (va)) >> PXSHIFT(level)) & PXMASK)// PX(level,va) 用于获取页号（第几项），va为虚拟地址，level为页表级数
 
 // one beyond the highest possible virtual address.
 // MAXVA is actually one bit less than the max allowed by

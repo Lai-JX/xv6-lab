@@ -180,7 +180,16 @@ int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
 int             test_pagetable();
 void            vmprint(pagetable_t);
+void *          pvminit();
+void            pvmmap(pagetable_t, uint64, uint64, uint64, int);
+void            pvminithart(pagetable_t);
+void            freewalk_punmap(pagetable_t);
+int             pvmcopy(pagetable_t, pagetable_t, uint64, uint);
+int             pvmclear(pagetable_t, uint64, uint);
 
+// vmcopyin.c
+int             copyin_new(pagetable_t, char *, uint64, uint64);
+int             copyinstr_new(pagetable_t, char *, uint64, uint64);
 // plic.c
 void            plicinit(void);
 void            plicinithart(void);

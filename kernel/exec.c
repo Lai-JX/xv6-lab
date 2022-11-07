@@ -110,9 +110,17 @@ exec(char *path, char **argv)
     
   // Commit to the user image.
   oldpagetable = p->pagetable;
-  p->pagetable = pagetable;
+  p->pagetable = pagetable;   // 这里的pagetable大小是在原来的基础上再加两个页（一个为用户栈一个为边界）
   p->sz = sz;
-  p->trapframe->epc = elf.entry;  // initial program counter = main
+  // printf("exec\n");
+  // 同步独立内核页表
+  if(pvmcopy(pagetable, p->k_pagetable, 0, sz)<0)
+    goto bad;
+  // printf("sz:%p\n", sz);
+  if (oldsz > sz)
+    pvmclear(p->k_pagetable, oldsz, sz);
+
+  p->trapframe->epc = elf.entry; // initial program counter = main
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
 
