@@ -581,9 +581,7 @@ pvmcopy(pagetable_t u_pagetable, pagetable_t k_pagetable, uint64 start, uint end
 
   pte_t *k_pte, *u_pte;
   uint64 va;
-  // printf("%p %p %p %p\n", start, end, PGROUNDUP(start), PGROUNDUP(end));
-  // vmprint(u_pagetable);
-  // vmprint(k_pagetable);
+
   for (va = PGROUNDUP(start); va < end; va += PGSIZE)
   {                                               // va这里表示虚拟地址
     if((u_pte = walk(u_pagetable, va, 0)) == 0)   // 用户页表的页表项指针
@@ -595,8 +593,7 @@ pvmcopy(pagetable_t u_pagetable, pagetable_t k_pagetable, uint64 start, uint end
       panic("pvmcopy: pte should exist (kernel page walk failed)");
     *k_pte = *u_pte;
   }
-  // vmprint(u_pagetable);
-  // vmprint(k_pagetable);
+
   return 0;
 }
 
@@ -606,11 +603,11 @@ pvmclear(pagetable_t k_pagetable, uint64 oldsz, uint newsz)
   if ( newsz > oldsz)
     return -1;
 
-  if (PGROUNDUP(newsz) < PGROUNDUP(oldsz))
-  {
-    int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
-    uvmunmap(k_pagetable, PGROUNDUP(newsz), npages, 0);   // 注意不能释放物理页
-  }
+  if (PGROUNDUP(newsz) >= PGROUNDUP(oldsz))
+    return -1;
+    
+  int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
+  uvmunmap(k_pagetable, PGROUNDUP(newsz), npages, 0);   // 注意不能释放物理页
 
   return 0;
 }

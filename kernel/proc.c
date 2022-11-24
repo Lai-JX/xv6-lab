@@ -304,7 +304,7 @@ fork(void)
     release(&np->lock);
     return -1;
   }
-  // printf("fork\n");
+
   // Copy kernel memory from parent to child. 复制独立内核页表
   if(pvmcopy(np->pagetable, np->k_pagetable, 0, p->sz) < 0){
     freeproc(np);

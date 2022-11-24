@@ -116,7 +116,6 @@ exec(char *path, char **argv)
   // 同步独立内核页表
   if(pvmcopy(pagetable, p->k_pagetable, 0, sz)<0)
     goto bad;
-  // printf("sz:%p\n", sz);
   if (oldsz > sz)
     pvmclear(p->k_pagetable, oldsz, sz);
 
